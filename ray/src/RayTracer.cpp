@@ -226,13 +226,15 @@ void RayTracer::traceImage(int w, int h)
 	//       An asynchronous traceImage lets the GUI update your results
 	//       while rendering.
 
-	glm::dvec3 p = scene->getCamera().getEye();
+	// glm::dvec3 p = scene->getCamera().getEye();
 	for (int i = 0; i < w; ++i) {
 		for (int j = 0; j < h; ++j) {
-			// glm::dvec3 s = tracePixel(i, j);
+			glm::dvec3 s = tracePixel(i, j);
+
+			// scene->getCamera().rayThrough(x,y,r);
 		}
 	}
-	cout << p << endl;
+	// cout << p << endl;
 }
 
 int RayTracer::aaImage()
