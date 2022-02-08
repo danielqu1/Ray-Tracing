@@ -1,4 +1,4 @@
-# Install script for directory: /home/ethan/Desktop/Graphics/Assignment1/ray
+# Install script for directory: /u/ethanlao/Documents/UTCS/spring_2022/Graphics-Assignment-1/ray
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -39,7 +39,7 @@ endif()
 
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/ethan/Desktop/Graphics/Assignment1/ray/build/src/cmake_install.cmake")
+  include("/u/ethanlao/Documents/UTCS/spring_2022/Graphics-Assignment-1/ray/build/src/cmake_install.cmake")
 
 endif()
 
@@ -51,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/ethan/Desktop/Graphics/Assignment1/ray/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/u/ethanlao/Documents/UTCS/spring_2022/Graphics-Assignment-1/ray/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
