@@ -1,4 +1,4 @@
-# Install script for directory: /home/ethan/Desktop/Graphics/Assignment1/ray/src
+# Install script for directory: /u/ethanlao/Documents/UTCS/spring_2022/Graphics-Assignment-1/ray/src
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
