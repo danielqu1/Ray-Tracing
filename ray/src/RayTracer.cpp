@@ -102,11 +102,11 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 
 		glm::dvec3 d = r.getDirection();
 		glm::dvec3 l = -d;
-		glm::dvec3 n = i.getN();
+		glm::dvec3 n = i.getN(); //@ethan i think this has to be normalized
 
-
+		// @ethan i think we should also do a check for depth > 0 here
 		// Handle reflection
-		if (m.Refl()) {
+		if (m.Refl()) { //@ethan idk what Refl() returns but do we need to check for m.kr
 			glm::dvec3 direction = d - (2 * glm::dot(d, n) * n);
 			glm::dvec3 position = r.at(i);
 
@@ -120,7 +120,7 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 		}
 
 		// Handle refraction
-		if (m.Trans()) {
+		if (m.Trans()) { //@ethan idk what Trans() returns but do we need to check for m.kt
 			// get ratio of index of refraction
 			glm::dvec3 normalSign = n;
 			double n_current;
