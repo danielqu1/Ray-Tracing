@@ -73,6 +73,11 @@ glm::dvec3 RayTracer::tracePixel(int i, int j)
 // (or places called from here) to handle reflection, refraction, etc etc.
 glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, double& t )
 {
+	// add base case, just return 0 vector
+	if(depth < 0){
+		return glm::dvec3(0.0, 0.0, 0.0);
+	}
+
 	isect i;
 	glm::dvec3 colorC;
 #if VERBOSE
@@ -92,7 +97,73 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 		// rays.
 
 		const Material& m = i.getMaterial();
+		t = i.getT();
 		colorC = m.shade(scene.get(), r, i);
+
+		glm::dvec3 d = r.getDirection();
+		glm::dvec3 l = -d;
+		glm::dvec3 n = i.getN();
+
+
+		// Handle reflection
+		if (m.Refl()) {
+			glm::dvec3 direction = d - (2 * glm::dot(d, n) * n);
+			glm::dvec3 position = r.at(i);
+
+			// add offset to prevent rounding issues
+			position += RAY_EPSILON * n;
+
+			// recurse on the ray
+			ray reflect = ray(position, direction, glm::dvec3(1, 1, 1), ray::REFLECTION);
+			double dummy = 0;
+			colorC += m.kr(i) * traceRay(reflect, thresh, depth - 1, dummy);
+		}
+
+		// Handle refraction
+		if (m.Trans()) {
+			// get ratio of index of refraction
+			glm::dvec3 normalSign = n;
+			double n_current;
+			double n_other;
+			bool rayIsExiting = glm::dot(d, n) > 0;
+			if (rayIsExiting) {
+				// ray is leaving object
+				n_current = m.index(i);
+				n_other = 1;
+				normalSign = -n;
+			}
+			else {
+				// ray is entering object
+				n_current = 1;
+				n_other = m.index(i);
+			}
+			double eta = n_current / n_other;
+
+			// get the direction
+			double cosd = abs(glm::dot(normalSign, d));
+			double w = eta * cosd;
+			double k = 1 + (w - eta) * (w + eta);
+
+			if(k > 0){
+				glm::dvec3 direction = (w - sqrt(k)) * normalSign + eta * d;
+
+				// position, offset to prevent rounding issues
+				glm::dvec3 position = r.at(i);
+				position += RAY_EPSILON * -normalSign;
+
+				// recurse on the ray
+				ray refract = ray(position, direction, glm::dvec3(1, 1, 1), ray::REFRACTION);
+				double newt = 0;
+				glm::dvec3 tempColor = traceRay(refract, thresh, depth - 1, newt);
+
+				if (!rayIsExiting)
+					tempColor *= glm::pow(m.kt(i), glm::dvec3(newt, newt, newt));
+
+				colorC += tempColor;
+			} else {
+
+			}
+		}
 	} else {
 		// No intersection.  This ray travels to infinity, so we color
 		// it according to the background color, which in this (simple) case
@@ -226,15 +297,11 @@ void RayTracer::traceImage(int w, int h)
 	//       An asynchronous traceImage lets the GUI update your results
 	//       while rendering.
 
-	// glm::dvec3 p = scene->getCamera().getEye();
 	for (int i = 0; i < w; ++i) {
 		for (int j = 0; j < h; ++j) {
 			glm::dvec3 s = tracePixel(i, j);
-
-			// scene->getCamera().rayThrough(x,y,r);
 		}
 	}
-	// cout << p << endl;
 }
 
 int RayTracer::aaImage()

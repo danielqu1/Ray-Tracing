@@ -45,7 +45,34 @@ glm::dvec3 Material::shade(Scene* scene, const ray& r, const isect& i) const
 	// 		.
 	// 		.
 	// }
-	return kd(i);
+	// return kd(i);
+
+	// initialize colorC
+	glm::dvec3 colorC = ke(i) + ka(i) * scene->ambient();
+
+	glm::dvec3 pos = r.at(i);
+	glm::dvec3 n = i.getN();
+
+	// loop through all lights
+	for (const auto& pLight : scene->getAllLights()) {
+		glm::dvec3 l = pLight->getDirection(pos);
+
+		// atten = dist atten * shadow atten
+		glm::dvec3 atten = pLight->distanceAttenuation(pos) * pLight->shadowAttenuation(r, pos);
+
+		// calculate diffuse term
+		glm::dvec3 diffuse = kd(i) * glm::max(glm::dot(l, n), 0.0);
+
+		// calculate specular term
+		glm::dvec3 v = glm::normalize(scene->getCamera().getEye() - pos);
+		// glm::dvec3 v = - r.getDirection();
+		glm::dvec3 r = (2 * glm::dot(l, n) * n) - l;
+		glm::dvec3 specular = ks(i) * glm::pow(glm::max(glm::dot(r, v), 0.0), shininess(i));
+
+		colorC += atten * (diffuse + specular);
+	}
+
+	return colorC;
 }
 
 TextureMap::TextureMap(string filename)
