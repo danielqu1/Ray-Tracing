@@ -97,7 +97,76 @@ bool TrimeshFace::intersectLocal(ray& r, isect& i) const
 	//
 	// FIXME: Add ray-trimesh intersection
 
-	return false;
+
+	glm::dvec3 a = parent->vertices[ids[0]]; //a
+    glm::dvec3 b = parent->vertices[ids[1]]; //b
+    glm::dvec3 c = parent->vertices[ids[2]]; //c
+	glm::dvec3 p = r.getPosition();
+    glm::dvec3 d = r.getDirection();
+	double t = 0.0;
+	glm::dvec3 n = cross(b - a, c - a);
+	float f = dot(d, n);
+	if (f >= 1e-6){
+		return false; 
+	}
+	t = dot(b - p, n) / f;
+	if (t < 0) {
+		return false;
+	}
+
+	glm::dvec3 aa = r.at(t);
+	glm::dvec3 inter = cross(b - a, aa - a);
+	if (dot(n,inter) < 0){
+		return false;
+	}
+	inter = cross(c - b, aa - b);
+	double u = length(inter)/length(n);
+	if (dot(n,inter) < 0){
+		return false;
+	}
+	inter = cross(a - c, aa - c);
+	double v = length(inter)/length(n);
+	if (dot(n,inter) < 0){
+		return false;
+	}
+
+	i.setObject(this);
+	i.setN(n);
+	i.setT(t);
+
+	glm::dvec3 bar;
+	bar.x = u;
+	bar.y = v;
+	bar.z = 1.0 - u - v;
+	i.setBary(bar);
+
+	//interpolate normals
+	if (traceUI->smShadSw() && !parent->normals.empty()){
+		glm::dvec3 na = parent->normals[ids[0]];
+        glm::dvec3 nb = parent->normals[ids[1]];
+        glm::dvec3 nc = parent->normals[ids[2]];
+
+		glm::dvec3 phong = (bar.x * na) + (bar.y * nb) + (bar.z * nc);
+		i.setN(normalize(phong));
+	}
+
+	//interpolate materials 
+	if(!parent->materials.empty()) {
+		Material ma = *(parent->materials[ids[0]]);
+        Material mb = *(parent->materials[ids[1]]);
+        Material mc = *(parent->materials[ids[2]]);
+
+		isect m;
+
+		ma.setAmbient(bar.x * ma.ka(m) + bar.y * mb.ka(m) + bar.z * mc.ka(m));
+		ma.setDiffuse(bar.x * ma.kd(m) + bar.y * mb.kd(m) + bar.z * mc.kd(m));
+		i.setMaterial(ma);
+	}
+	else {
+		i.setMaterial(this->getMaterial());
+	}
+
+	return true;
 }
 
 // Once all the verts and faces are loaded, per vertex normals can be
