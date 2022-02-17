@@ -1,0 +1,4 @@
+ray/raycheck.out/*
+ray/build/*
+ray/go.sh
+ray/third-party
