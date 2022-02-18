@@ -84,28 +84,6 @@ glm::dvec3 PointLight::shadowAttenuation(const ray& r, const glm::dvec3& p) cons
 	}
 
 	return color;
-
-
-	// ray shadowRay = ray(p, getDirection(p), glm::dvec3(1, 1 ,1), ray::SHADOW);
-	// double length = glm::distance(p, position);
-	// isect ii;
-	// glm::dvec3 pos = glm::dvec3(0.0, 0.0, 0.0);
-	// glm::dvec3 intensity = color, kt;
-	// while(scene->intersect(shadowRay, ii)){
-	// 	if((length -= ii.getT()) < RAY_EPSILON) return intensity;
-	// 	if(!ii.getMaterial().Trans())
-	// 		return glm::dvec3(0.0, 0.0, 0.0);
-	// 	if(glm::dot(shadowRay.getDirection(), ii.getN()) > 0){
-	// 		kt = ii.getMaterial().kt(ii);
-	// 		for(int k = 0; k < 3; k++){
-	// 			intensity[k] *= pow(kt[k], ii.getT());
-	// 		}
-	// 		pos = ii.getN() * RAY_EPSILON;
-	// 	}else
-	// 		pos = - ii.getN() * RAY_EPSILON;
-	// 	shadowRay.setPosition(shadowRay.at(ii) + pos);// = ray(pos, getDirection(pos), glm::dvec3(1, 1, 1), ray::SHADOW);
-	// }
-	// return intensity;
 }
 
 #define VERBOSE 0
