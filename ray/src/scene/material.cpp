@@ -103,24 +103,33 @@ glm::dvec3 TextureMap::getMappedValue(const glm::dvec2& coord) const
 	double w = (double) getWidth();
 	double h = (double) getHeight();
 
-	double left = floor(coord.x * w);
-	double right = left + 1.0;
-	double bot = floor(coord.y * h);
-	double top = bot + 1.0;
+	int left = (int) round(coord.x * w);
+	// int right = left + 1;
+	int bot = (int) round(coord.y * h);
+	// int top = bot + 1;
 
-	if (right >= w) {
-		right = w - 1;
+	// if (right >= w) {
+	// 	right = w - 1;
+	// }
+	// if (top >= h) {
+	// 	top = h - 1;
+	// }
+
+	if (left >= w) {
+		left = w - 1;
 	}
-	if (top >= h) {
-		top = h - 1;
+	if (bot >= h) {
+		bot = h - 1;
 	}
 
-	glm::dvec3 topleft = getPixelAt(left, top);
-	glm::dvec3 topright = getPixelAt(right, top);
-	glm::dvec3 botleft = getPixelAt(left, bot);
-	glm::dvec3 botright = getPixelAt(right, bot);
+	return getPixelAt(left, bot);
 
-	return (topleft + topright + botleft + botright) / glm::dvec3(4.0, 4.0, 4.0);
+	// glm::dvec3 topleft = getPixelAt(left, top);
+	// glm::dvec3 topright = getPixelAt(right, top);
+	// glm::dvec3 botleft = getPixelAt(left, bot);
+	// glm::dvec3 botright = getPixelAt(right, bot);
+
+	// return (topleft + topright + botleft + botright) / glm::dvec3(4.0, 4.0, 4.0);
 }
 
 glm::dvec3 TextureMap::getPixelAt(int x, int y) const
