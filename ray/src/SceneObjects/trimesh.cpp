@@ -106,11 +106,15 @@ bool TrimeshFace::intersectLocal(ray& r, isect& i) const
 	double t = 0.0;
 	glm::dvec3 n = cross(b - a, c - a);
 	float f = dot(d, n);
+	//check triangle area?
+	if (glm::length(n) / 2 < RAY_EPSILON) {
+		return false;
+	}
 	if (f >= RAY_EPSILON){
 		return false; 
 	}
 	t = dot(b - p, n) / f;
-	if (t < 0) {
+	if (t < RAY_EPSILON) {
 		return false;
 	}
 
