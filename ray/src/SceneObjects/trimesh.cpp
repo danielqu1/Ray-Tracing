@@ -104,15 +104,25 @@ bool TrimeshFace::intersectLocal(ray& r, isect& i) const
 	glm::dvec3 p = r.getPosition();
     glm::dvec3 d = r.getDirection();
 	double t = 0.0;
+
+	glm::dvec3 normal = glm::normalize(i.getN());
+	double tempd = - (normal[0] * p[0] + normal[1] * p[1] + normal[2] * p[2]);
+	if ((glm::dot(normal, p) + tempd) >= RAY_EPSILON) {
+		return false;
+	}
+
 	glm::dvec3 n = cross(b - a, c - a);
 	float f = dot(d, n);
+
 	//check triangle area?
 	if (glm::length(n) / 2 < RAY_EPSILON) {
 		return false;
 	}
+
 	if (f >= RAY_EPSILON){
 		return false; 
 	}
+
 	t = dot(b - p, n) / f;
 	if (t < RAY_EPSILON) {
 		return false;
