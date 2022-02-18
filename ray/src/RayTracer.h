@@ -71,8 +71,8 @@ private:
 
 	bool m_bBufferReady;
 
-	void traceImageThread(int id, int w, int startH, int endH);
-	void aaImageThread(int id, int w, int startH, int endH);
+	void traceImageThread(int id, int w, int h);
+	void aaImageThread(int id, int w, int h);
 
 	std::vector<std::thread> allThreads;
 	std::set<int> finishedThreads;
