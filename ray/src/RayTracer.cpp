@@ -263,6 +263,16 @@ void RayTracer::traceSetup(int w, int h)
 
 	// YOUR CODE HERE
 	// FIXME: Additional initializations
+
+	threadsFinished = false;
+}
+
+void RayTracer::traceImageThread(int w, int startH, int endH) {
+	for (int i = 0; i < w; ++i) {
+		for (int j = startH; j < endH; ++j) {
+			glm::dvec3 s = tracePixel(i, j);
+		}
+	}
 }
 
 /*
@@ -289,11 +299,18 @@ void RayTracer::traceImage(int w, int h)
 	//       An asynchronous traceImage lets the GUI update your results
 	//       while rendering.
 
-	for (int i = 0; i < w; ++i) {
-		for (int j = 0; j < h; ++j) {
-			glm::dvec3 s = tracePixel(i, j);
-		}
+	int threadHeight = h / threads;
+	for (int t = 0; t < threads - 1; ++t) {
+		int start = t * threadHeight;
+		int end = (t + 1) * threadHeight;
+		std::thread imageThread(&RayTracer::traceImageThread, this, w, start, end);
+		allThreads.push_back(std::move(imageThread));
 	}
+
+	int finalStart = (threads - 1) * threadHeight;
+	int finalEnd = h;
+	std::thread finalThread(&RayTracer::traceImageThread, this, w, finalStart, finalEnd);
+	allThreads.push_back(std::move(finalThread));
 }
 
 int RayTracer::aaImage()
@@ -370,7 +387,7 @@ bool RayTracer::checkRender()
 	//
 	// TIPS: Introduce an array to track the status of each worker thread.
 	//       This array is maintained by the worker threads.
-	return true;
+	return threadsFinished;
 }
 
 void RayTracer::waitRender()
@@ -381,6 +398,14 @@ void RayTracer::waitRender()
 	//        traceImage implementation.
 	//
 	// TIPS: Join all worker threads here.
+
+	for (std::thread & th : allThreads) {
+		if (th.joinable()) {
+        	th.join();
+		}
+	}
+
+	threadsFinished = true;
 }
 
 

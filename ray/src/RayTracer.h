@@ -70,6 +70,10 @@ private:
 
 	bool m_bBufferReady;
 
+	void traceImageThread(int w, int startH, int endH);
+
+	bool threadsFinished;
+	std::vector<std::thread> allThreads;
 };
 
 #endif // __RAYTRACER_H__

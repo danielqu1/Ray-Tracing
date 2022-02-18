@@ -113,7 +113,7 @@ glm::dvec3 TextureMap::getMappedValue(const glm::dvec2& coord) const
 		y = h - 1;
 	}
 
-	return getPixelAt(x, t);
+	return getPixelAt(x, y);
 }
 
 glm::dvec3 TextureMap::getPixelAt(int x, int y) const
