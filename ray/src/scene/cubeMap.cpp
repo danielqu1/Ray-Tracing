@@ -63,7 +63,7 @@ glm::dvec3 CubeMap::getColor(ray r) const
 	u = 0.5 * (u / k + 1);
 	v = 0.5 * (v / k + 1);
 
-	return tMap[index]->getMappedValue(glm::dvec2(u,v));
+	return tMap[index]->getMappedValue(glm::dvec2(u, v));
 }
 
 CubeMap::CubeMap()
