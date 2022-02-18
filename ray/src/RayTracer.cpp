@@ -255,7 +255,7 @@ void RayTracer::traceSetup(int w, int h)
 	 * Sync with TraceUI
 	 */
 
-	threads = traceUI->getThreads();
+	threads = traceUI->getThreads() * 4;
 	block_size = traceUI->getBlockSize();
 	thresh = traceUI->getThreshold();
 	samples = traceUI->getSuperSamples();
