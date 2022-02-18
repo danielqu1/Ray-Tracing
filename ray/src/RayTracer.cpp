@@ -263,16 +263,16 @@ void RayTracer::traceSetup(int w, int h)
 
 	// YOUR CODE HERE
 	// FIXME: Additional initializations
-
-	threadsFinished = false;
 }
 
-void RayTracer::traceImageThread(int w, int startH, int endH) {
+void RayTracer::traceImageThread(int id, int w, int startH, int endH) {
 	for (int i = 0; i < w; ++i) {
 		for (int j = startH; j < endH; ++j) {
 			glm::dvec3 s = tracePixel(i, j);
 		}
 	}
+
+	finishedThreads.insert(id);
 }
 
 /*
@@ -303,14 +303,69 @@ void RayTracer::traceImage(int w, int h)
 	for (int t = 0; t < threads - 1; ++t) {
 		int start = t * threadHeight;
 		int end = (t + 1) * threadHeight;
-		std::thread imageThread(&RayTracer::traceImageThread, this, w, start, end);
+		std::thread imageThread(&RayTracer::traceImageThread, this, t, w, start, end);
 		allThreads.push_back(std::move(imageThread));
 	}
 
 	int finalStart = (threads - 1) * threadHeight;
 	int finalEnd = h;
-	std::thread finalThread(&RayTracer::traceImageThread, this, w, finalStart, finalEnd);
+	std::thread finalThread(&RayTracer::traceImageThread, this, threads - 1, w, finalStart, finalEnd);
 	allThreads.push_back(std::move(finalThread));
+}
+
+void RayTracer::aaImageThread(int id, int w, int startH, int endH) {
+	double x_offset = 1.0 / double(buffer_width * samples);
+	double y_offset = 1.0 / double(buffer_height * samples);
+	for (int i = 0; i < buffer_width; ++i) {
+		for (int j = startH; j < endH; ++j) {
+			glm::dvec3 color = getPixel(i, j);
+
+			bool onBoundary = false;
+			for (int a = -1; a < 2; ++a) {
+				if (i + a < 0 || i + a >= buffer_width) {
+					continue;
+				}
+
+				for (int b = -1; b < 2; ++b) {
+					if (a == 0 && b == 0) {
+						continue;
+					}
+
+					if (j + b < 0 || j + b >= buffer_height) {
+						continue;
+					}
+
+					glm::dvec3 diff = abs(getPixel(i + a, j + b) - color);
+					if (diff[0] > aaThresh || diff[1] > aaThresh || diff[2] > aaThresh) {
+						onBoundary = true;
+						break;
+					}
+				}
+				if (onBoundary)
+					break;
+			}
+
+			if (onBoundary) {
+				int totalSamples = glm::pow(samples, 2);
+				glm::dvec3 newColor = glm::dvec3(0, 0, 0);
+
+				double x = (double(i) - .5) / double(buffer_width);
+				double y = (double(j) - .5) / double(buffer_height);
+				for (int a = 0; a < samples; ++a) {
+					double x_sample = x + (double(a) * x_offset);
+
+					for (int b = 0; b < samples; ++b) {
+						double y_sample = y + (double(b) * y_offset);
+						newColor += trace(x_sample, y_sample) / double(totalSamples);
+					}
+				}
+
+				setPixel(i, j, newColor);
+			}
+		}
+	}
+
+	finishedThreads.insert(id);
 }
 
 int RayTracer::aaImage()
@@ -323,57 +378,18 @@ int RayTracer::aaImage()
 	// return 0;
 
 	if (samples > 0) {
-		double x_offset = 1.0 / double(buffer_width * samples);
-		double y_offset = 1.0 / double(buffer_height * samples);
-
-		for (int i = 0; i < buffer_width; ++i) {
-			for (int j = 0; j < buffer_height; ++j) {
-				glm::dvec3 color = getPixel(i, j);
-
-				bool onBoundary = false;
-				for (int a = -1; a < 2; ++a) {
-					if (i + a < 0 || i + a >= buffer_width) {
-						continue;
-					}
-
-					for (int b = -1; b < 2; ++b) {
-						if (a == 0 && b == 0) {
-							continue;
-						}
-
-						if (j + b < 0 || j + b >= buffer_height) {
-							continue;
-						}
-
-						glm::dvec3 diff = abs(getPixel(i + a, j + b) - color);
-						if (diff[0] > aaThresh || diff[1] > aaThresh || diff[2] > aaThresh) {
-							onBoundary = true;
-							break;
-						}
-					}
-					if (onBoundary)
-						break;
-				}
-
-				if (onBoundary) {
-					int totalSamples = glm::pow(samples, 2);
-					glm::dvec3 newColor = glm::dvec3(0, 0, 0);
-
-					double x = (double(i) - .5) / double(buffer_width);
-					double y = (double(j) - .5) / double(buffer_height);
-					for (int a = 0; a < samples; ++a) {
-						double x_sample = x + (double(a) * x_offset);
-
-						for (int b = 0; b < samples; ++b) {
-							double y_sample = y + (double(b) * y_offset);
-							newColor += trace(x_sample, y_sample) / double(totalSamples);
-						}
-					}
-
-					setPixel(i, j, newColor);
-				}
-			}
+		int threadHeight = buffer_height / threads;
+		for (int t = 0; t < threads - 1; ++t) {
+			int start = t * threadHeight;
+			int end = (t + 1) * threadHeight;
+			std::thread imageThread(&RayTracer::aaImageThread, this, t, buffer_width, start, end);
+			allThreads.push_back(std::move(imageThread));
 		}
+
+		int finalStart = (threads - 1) * threadHeight;
+		int finalEnd = buffer_height;
+		std::thread finalThread(&RayTracer::aaImageThread, this, threads - 1, buffer_width, finalStart, finalEnd);
+		allThreads.push_back(std::move(finalThread));
 	}
 
 	return 0;
@@ -387,7 +403,15 @@ bool RayTracer::checkRender()
 	//
 	// TIPS: Introduce an array to track the status of each worker thread.
 	//       This array is maintained by the worker threads.
-	return threadsFinished;
+	
+	for (int i = 0; i < threads; ++i) {
+		if (finishedThreads.find(i) == finishedThreads.end())
+			return false;
+	}
+
+	finishedThreads.clear();
+
+	return true;
 }
 
 void RayTracer::waitRender()
@@ -404,8 +428,6 @@ void RayTracer::waitRender()
         	th.join();
 		}
 	}
-
-	threadsFinished = true;
 }
 
 

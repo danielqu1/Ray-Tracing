@@ -12,6 +12,7 @@
 #include "scene/cubeMap.h"
 #include "scene/ray.h"
 #include <mutex>
+#include <set>
 
 class Scene;
 class Pixel {
@@ -70,10 +71,11 @@ private:
 
 	bool m_bBufferReady;
 
-	void traceImageThread(int w, int startH, int endH);
+	void traceImageThread(int id, int w, int startH, int endH);
+	void aaImageThread(int id, int w, int startH, int endH);
 
-	bool threadsFinished;
 	std::vector<std::thread> allThreads;
+	std::set<int> finishedThreads;
 };
 
 #endif // __RAYTRACER_H__
