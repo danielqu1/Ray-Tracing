@@ -24,7 +24,7 @@ glm::dvec3 DirectionalLight::shadowAttenuation(const ray& r, const glm::dvec3& p
 	glm::dvec3 direction = glm::normalize(getDirection(p));
 
 	isect i;
-	ray shadow(p, direction, glm::dvec3(1, 1, 1), ray::SHADOW);
+	ray shadow(p + direction * RAY_EPSILON, direction, glm::dvec3(1, 1, 1), ray::SHADOW);
 	if (this->getScene()->intersect(shadow, i)) {
 		return glm::dvec3(0, 0, 0);
 	}
@@ -76,7 +76,7 @@ glm::dvec3 PointLight::shadowAttenuation(const ray& r, const glm::dvec3& p) cons
 	glm::dvec3 direction = glm::normalize(getDirection(p));
 
 	isect i;
-	ray shadow(p, direction, glm::dvec3(1, 1, 1), ray::SHADOW);
+	ray shadow(p + direction * RAY_EPSILON, direction, glm::dvec3(1, 1, 1), ray::SHADOW);
 	if (this->getScene()->intersect(shadow, i)) {
 		double distToObject = glm::distance(shadow.at(i), p);
 		double distToLight = glm::distance(position, p);

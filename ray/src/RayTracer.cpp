@@ -74,7 +74,7 @@ glm::dvec3 RayTracer::tracePixel(int i, int j)
 glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, double& t )
 {
 	// add base case, just return 0 vector
-	if(depth < 0){
+	if (depth < 0){
 		return glm::dvec3(0.0, 0.0, 0.0);
 	}
 
@@ -106,21 +106,21 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 
 		// @ethan i think we should also do a check for depth > 0 here
 		// Handle reflection
-		if (m.Refl()) { //@ethan idk what Refl() returns but do we need to check for m.kr
+		if (m.Refl()) {
 			glm::dvec3 direction = d - (2 * glm::dot(d, n) * n);
 			glm::dvec3 position = r.at(i);
 
 			// add offset to prevent rounding issues
-			position += RAY_EPSILON * n;
+			// position += RAY_EPSILON * n;
 
 			// recurse on the ray
-			ray reflect = ray(position, direction, glm::dvec3(1, 1, 1), ray::REFLECTION);
+			ray reflect = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFLECTION);
 			double dummy = 0;
 			colorC += m.kr(i) * traceRay(reflect, thresh, depth - 1, dummy);
 		}
 
 		// Handle refraction
-		if (m.Trans()) { //@ethan idk what Trans() returns but do we need to check for m.kt
+		if (m.Trans()) {
 			// get ratio of index of refraction
 			glm::dvec3 normalSign = n;
 			double n_current;
@@ -149,10 +149,10 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 
 				// position, offset to prevent rounding issues
 				glm::dvec3 position = r.at(i);
-				position += RAY_EPSILON * -normalSign;
+				// position += RAY_EPSILON * -normalSign;
 
 				// recurse on the ray
-				ray refract = ray(position, direction, glm::dvec3(1, 1, 1), ray::REFRACTION);
+				ray refract = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFRACTION);
 				double newt = 0;
 				glm::dvec3 tempColor = traceRay(refract, thresh, depth - 1, newt);
 

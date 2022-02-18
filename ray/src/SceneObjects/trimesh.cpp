@@ -106,7 +106,7 @@ bool TrimeshFace::intersectLocal(ray& r, isect& i) const
 	double t = 0.0;
 	glm::dvec3 n = cross(b - a, c - a);
 	float f = dot(d, n);
-	if (f >= 1e-6){
+	if (f >= RAY_EPSILON){
 		return false; 
 	}
 	t = dot(b - p, n) / f;
