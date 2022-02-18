@@ -305,8 +305,60 @@ int RayTracer::aaImage()
 	//      RayTracer::traceSetup() function
 	// return 0;
 
+	if (samples > 0) {
+		double x_offset = 1.0 / double(buffer_width * samples);
+		double y_offset = 1.0 / double(buffer_height * samples);
 
-	
+		for (int i = 0; i < buffer_width; ++i) {
+			for (int j = 0; j < buffer_height; ++j) {
+				glm::dvec3 color = getPixel(i, j);
+
+				bool onBoundary = false;
+				for (int a = -1; a < 2; ++a) {
+					if (i + a < 0 || i + a >= buffer_width) {
+						continue;
+					}
+
+					for (int b = -1; b < 2; ++b) {
+						if (a == 0 && b == 0) {
+							continue;
+						}
+
+						if (j + b < 0 || j + b >= buffer_height) {
+							continue;
+						}
+
+						glm::dvec3 diff = abs(getPixel(i + a, j + b) - color);
+						if (diff[0] > aaThresh || diff[1] > aaThresh || diff[2] > aaThresh) {
+							onBoundary = true;
+							break;
+						}
+					}
+					if (onBoundary)
+						break;
+				}
+
+				if (onBoundary) {
+					int totalSamples = glm::pow(samples, 2);
+					glm::dvec3 newColor = glm::dvec3(0, 0, 0);
+
+					double x = (double(i) - .5) / double(buffer_width);
+					double y = (double(j) - .5) / double(buffer_height);
+					for (int a = 0; a < samples; ++a) {
+						double x_sample = x + (double(a) * x_offset);
+
+						for (int b = 0; b < samples; ++b) {
+							double y_sample = y + (double(b) * y_offset);
+							newColor += trace(x_sample, y_sample) / double(totalSamples);
+						}
+					}
+
+					setPixel(i, j, newColor);
+				}
+			}
+		}
+	}
+
 	return 0;
 }
 

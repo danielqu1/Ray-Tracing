@@ -71,7 +71,6 @@ glm::dvec3 PointLight::shadowAttenuation(const ray& r, const glm::dvec3& p) cons
 	// You should implement shadow-handling code here.
 	// return glm::dvec3(1,1,1);
 
-
 	glm::dvec3 direction = glm::normalize(getDirection(p));
 
 	isect i;
