@@ -100,23 +100,18 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 		t = i.getT();
 		colorC = m.shade(scene.get(), r, i);
 
-		glm::dvec3 d = r.getDirection();
+		glm::dvec3 position = r.at(i);
+		glm::dvec3 d = glm::normalize(r.getDirection());
 		glm::dvec3 l = -d;
-		glm::dvec3 n = i.getN(); //@ethan i think this has to be normalized
+		glm::dvec3 n = glm::normalize(i.getN());
 
-		// @ethan i think we should also do a check for depth > 0 here
 		// Handle reflection
 		if (m.Refl()) {
-			glm::dvec3 direction = d - (2 * glm::dot(d, n) * n);
-			glm::dvec3 position = r.at(i);
-
-			// add offset to prevent rounding issues
-			// position += RAY_EPSILON * n;
+			glm::dvec3 direction = glm::normalize(d - (2 * glm::dot(d, n) * n));
 
 			// recurse on the ray
 			ray reflect = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFLECTION);
-			double dummy = 0;
-			colorC += m.kr(i) * traceRay(reflect, thresh, depth - 1, dummy);
+			colorC += m.kr(i) * traceRay(reflect, thresh, depth - 1, t);
 		}
 
 		// Handle refraction
@@ -145,21 +140,13 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 			double k = 1 + (w - eta) * (w + eta);
 
 			if(k > 0){
-				glm::dvec3 direction = (w - sqrt(k)) * normalSign + eta * d;
-
-				// position, offset to prevent rounding issues
-				glm::dvec3 position = r.at(i);
-				// position += RAY_EPSILON * -normalSign;
+				glm::dvec3 direction = glm::normalize((w - sqrt(k)) * normalSign + eta * d);
 
 				// recurse on the ray
 				ray refract = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFRACTION);
-				double newt = 0;
-				glm::dvec3 tempColor = traceRay(refract, thresh, depth - 1, newt);
+				glm::dvec3 tempColor = traceRay(refract, thresh, depth - 1, t);
 
-				if (!rayIsExiting)
-					tempColor *= glm::pow(m.kt(i), glm::dvec3(newt, newt, newt));
-
-				colorC += tempColor;
+				colorC += m.kt(i) * tempColor;
 			} else {
 
 			}
@@ -316,6 +303,10 @@ int RayTracer::aaImage()
 	//
 	// TIP: samples and aaThresh have been synchronized with TraceUI by
 	//      RayTracer::traceSetup() function
+	// return 0;
+
+
+	
 	return 0;
 }
 
