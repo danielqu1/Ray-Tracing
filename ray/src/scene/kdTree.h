@@ -2,6 +2,25 @@
 
 // Note: you can put kd-tree here
 
+#include <algorithm>
+#include <map>
+#include <memory>
+#include <string>
+#include <vector>
+#include <mutex>
+
+#include "bbox.h"
+#include "camera.h"
+#include "material.h"
+#include "ray.h"
+
+#include <glm/geometric.hpp>
+#include <glm/mat3x3.hpp>
+#include <glm/mat4x4.hpp>
+#include <glm/matrix.hpp>
+#include <glm/vec3.hpp>
+#include <glm/vec4.hpp>
+
 
 class SplitNode;
 class LeafNode;
