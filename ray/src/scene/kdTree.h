@@ -2,24 +2,12 @@
 
 // Note: you can put kd-tree here
 
-#include <algorithm>
-#include <map>
-#include <memory>
-#include <string>
 #include <vector>
-#include <mutex>
-
-#include "bbox.h"
-#include "camera.h"
-#include "material.h"
-#include "ray.h"
-
-#include <glm/geometric.hpp>
-#include <glm/mat3x3.hpp>
-#include <glm/mat4x4.hpp>
-#include <glm/matrix.hpp>
 #include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
+#include "ray.h"
+#include "scene.h"
+#include "bbox.h"
+
 
 
 class SplitNode;
@@ -146,9 +134,9 @@ public:
             if (max > bestPlane.position) {
                 rightList.push_back(obj);
             } 
-            if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal() < 0) {
+            if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) < 0) {
                 leftList.push_back(obj);
-            } else if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal() >= 0) {
+            } else if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) >= 0) {
                 rightList.push_back(obj); 
             }
         }
@@ -206,8 +194,8 @@ public:
                          * plane.rightBBoxArea)/bbox.area(); 
 
             
-            if (s < minSam){
-                minSam = s;
+            if (s < minS){
+                minS = s;
                 bestPlane = plane;
             }
         }       
