@@ -9,7 +9,7 @@
 #include <glm/gtx/io.hpp>
 
 using namespace std;
-// extern TraceUI* traceUI;
+extern TraceUI* traceUI;
 
 bool Geometry::intersect(ray& r, isect& i) const {
 	double tmin, tmax;
@@ -119,19 +119,19 @@ bool Scene::intersect(ray& r, isect& i) const {
 	bool have_one = false;
 
 
-/*	if (traceUI->kdSwitch()){
+	if (traceUI->kdSwitch()){
 		have_one = kdtree->root->findIntersection(r, i, tmin, tmax);
 	} else {
-*/
-	for(const auto& obj : objects) {
-		isect cur;
-		if( obj->intersect(r, cur) ) {
-			if(!have_one || (cur.getT() < i.getT())) {
-				i = cur;
-				have_one = true;
+
+		for(const auto& obj : objects) {
+			isect cur;
+			if( obj->intersect(r, cur) ) {
+				if(!have_one || (cur.getT() < i.getT())) {
+					i = cur;
+					have_one = true;
+				}
 			}
 		}
-//	}
 	}
 	if(!have_one)
 		i.setT(1000.0);
