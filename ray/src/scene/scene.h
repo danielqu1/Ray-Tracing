@@ -264,6 +264,8 @@ public:
 
 	const BoundingBox& bounds() const { return sceneBounds; }
 
+	void buildTree();
+
 
 private:
 	std::vector<std::unique_ptr<Geometry>> objects;

@@ -74,16 +74,15 @@ class LeafNode : public Node
 {
 public:
 
-    std::vector<Geometry*> objList;
-    LeafNode(std::vector<Geometry*> _obj) : objList(_obj) {}
+    std::vector<std::unique_ptr<Geometry>> objList;
+    LeafNode(std::vector<std::unique_ptr<Geometry>> _obj) : objList(_obj) {}
 
     bool findIntersection(ray& r, isect& i, double t_min, double t_max){
         bool found = false;
         i.setT(1e13);
 
-        for(std::vector<Geometry*>::iterator t = objList.begin(); t != objList.end(); ++t){
+        for(const auto& obj : objList) {
 
-            Geometry* obj = *t;
             obj->getBoundingBox().intersect(r, t_min, t_max);
             isect curr;
 
@@ -107,7 +106,7 @@ public:
     Node* root;
 
     KdTree() : depth(0) {}
-    KdTree(std::vector<Geometry*>& objList, BoundingBox bbox, int depthLimit, int leafSize) {
+    KdTree(std::vector<std::unique_ptr<Geometry>>& objList, BoundingBox bbox, int depthLimit, int leafSize) {
         depth = 0;
         root = buildTree(objList, bbox, depthLimit, leafSize);
     }
@@ -115,29 +114,28 @@ public:
         delete root;
     };
 
-    Node* buildTree(std::vector<Geometry*> objList, BoundingBox bbox, int depthLimit, int leafSize) {
+    Node* buildTree(std::vector<std::unique_ptr<Geometry>> objList, BoundingBox bbox, int depthLimit, int leafSize) {
         if (objList.size() <= leafSize || ++depth == depthLimit) { 
             return new LeafNode(objList);   
         }
-        std::vector<Geometry*> leftList;
-        std::vector<Geometry*> rightList;
+        std::vector<std::unique_ptr<Geometry>> leftList;
+        std::vector<std::unique_ptr<Geometry>> rightList;
         Plane bestPlane = findBestPlane(objList, bbox);
 
-        for (std::vector<Geometry*>::iterator t = objList.begin(); t != objList.end(); ++t){
-            Geometry* obj = *t; 
+        for(const auto& obj : objList) {
             double min = obj->getBoundingBox().getMin()[bestPlane.axis];
             double max = obj->getBoundingBox().getMax()[bestPlane.axis];
 
             if (min < bestPlane.position) {
-                    leftList.push_back(obj);
+                    leftList.emplace_back(obj);
             }
             if (max > bestPlane.position) {
-                rightList.push_back(obj);
+                rightList.emplace_back(obj);
             } 
             if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) < 0) {
-                leftList.push_back(obj);
+                leftList.emplace_back(obj);
             } else if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) >= 0) {
-                rightList.push_back(obj); 
+                rightList.emplace_back(obj); 
             }
         }
 
@@ -149,16 +147,13 @@ public:
                 buildTree(rightList, bestPlane.rightBBox, depth, leafSize)); 
     }
 
-    Plane findBestPlane(std::vector<Geometry*> objList, BoundingBox bbox){
+    Plane findBestPlane(std::vector<std::unique_ptr<Geometry>> objList, BoundingBox bbox){
         std::vector<Plane> planeList;
         Plane bestPlane;
         Plane plane;
 
         for (int axis = 0 ; axis < 3; axis++) {
-            for (std::vector<Geometry*>::iterator t = objList.begin(); 
-                t != objList.end(); ++t){
-
-                Geometry* obj = *t;   
+            for(const auto& obj : objList) {
                 Plane p1;
                 Plane p2;
              
@@ -201,13 +196,11 @@ public:
         }       
         return bestPlane;
     }
-    int countP(std::vector<Geometry*> objList, Plane& plane, bool left){
+    int countP(std::vector<std::unique_ptr<Geometry>> objList, Plane& plane, bool left){
 
         int countL = 0;
         int countR = 0;
-        for (std::vector<Geometry*>::iterator t = objList.begin(); t != objList.end(); ++t){
-
-            Geometry* obj = *t;
+        for(const auto& obj : objList) {
             double min = obj->getBoundingBox().getMin()[plane.axis];
             double max = obj->getBoundingBox().getMax()[plane.axis];
     

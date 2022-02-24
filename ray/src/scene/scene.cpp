@@ -97,6 +97,11 @@ Scene::Scene()
 
 Scene::~Scene()
 {
+	// gonna have mem leaks
+	for(const auto& obj : objects) delete &obj;
+	for(const auto& light : lights) delete &light;
+	for(tmap::iterator t = textureCache.begin(); t != textureCache.end(); t++ ) delete &t->second;
+    delete kdtree;
 }
 
 void Scene::add(Geometry* obj) {
@@ -152,4 +157,8 @@ TextureMap* Scene::getTexture(string name) {
 	return itr->second.get();
 }
 
+void Scene::buildTree(){
+    kdtree = new KdTree<Geometry> (objects, sceneBounds,traceUI->getMaxDepth(),traceUI->getLeafSize());
+    
+}
 
