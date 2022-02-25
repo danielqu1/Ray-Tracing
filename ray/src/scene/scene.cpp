@@ -93,6 +93,7 @@ void Geometry::ComputeBoundingBox() {
 Scene::Scene()
 {
 	ambientIntensity = glm::dvec3(0, 0, 0);
+	kdtree = new KdTree();
 }
 
 Scene::~Scene()
@@ -105,6 +106,7 @@ Scene::~Scene()
 }
 
 void Scene::add(Geometry* obj) {
+	// std::cout << "ADDING" << std::endl;
 	obj->ComputeBoundingBox();
 	sceneBounds.merge(obj->getBoundingBox());
 	objects.emplace_back(obj);
@@ -123,8 +125,10 @@ bool Scene::intersect(ray& r, isect& i) const {
 	double tmax = 0.0;
 	bool have_one = false;
 
-
+	// std::cout << "in intersect" << std::endl;
+	// std::cout << objects.size() << std::endl;
 	if (traceUI->kdSwitch()){
+		// std::cout << "INTERSECT" << std::endl;
 		have_one = kdtree->root->findIntersection(r, i, tmin, tmax);
 	} else {
 
@@ -158,7 +162,9 @@ TextureMap* Scene::getTexture(string name) {
 }
 
 void Scene::buildTree(){
-    kdtree = new KdTree<Geometry> (objects, sceneBounds,traceUI->getMaxDepth(),traceUI->getLeafSize());
-    
+	// std::cout << "in buildTree" << std::endl;
+	// std::cout << objects.size() << std::endl;
+    // kdtree = new KdTree<Geometry> (std::move(objects), sceneBounds,traceUI->getMaxDepth(),traceUI->getLeafSize());
+    kdtree->buildTree(std::move(objects), sceneBounds,traceUI->getMaxDepth(),traceUI->getLeafSize());
 }
 

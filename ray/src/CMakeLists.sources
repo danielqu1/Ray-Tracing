@@ -52,12 +52,13 @@
 ./scene/light.cpp
 ./scene/camera.h
 ./scene/light.h
-./scene/kdTree.h
 ./scene/material.cpp
 ./scene/bbox.h
 ./scene/cubeMap.cpp
 ./scene/ray.h
 ./scene/scene.h
+./scene/kdTree.h
 ./scene/ray.cpp
+./scene/kdTree.cpp
 ./scene/scene.cpp
 ./scene/cubeMap.h

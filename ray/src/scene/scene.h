@@ -28,13 +28,16 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 
+#include "kdTree.h"
+
 using std::unique_ptr;
 
+class KdTree;
 class Light;
 class Scene;
 
-template <typename Obj>
-class KdTree;
+// template <typename Obj>
+// class KdTree;
 
 class SceneElement {
 public:
@@ -266,7 +269,6 @@ public:
 
 	void buildTree();
 
-
 private:
 	std::vector<std::unique_ptr<Geometry>> objects;
 	std::vector<std::unique_ptr<Light>> lights;
@@ -286,7 +288,8 @@ private:
 	// are exempt from this requirement.
 	BoundingBox sceneBounds;
 
-	KdTree<Geometry>* kdtree;
+	// KdTree<Geometry>* kdtree;
+	KdTree* kdtree;
 
 	mutable std::mutex intersectionCacheMutex;
 

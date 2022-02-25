@@ -23,7 +23,6 @@ class Trimesh : public MaterialSceneObject {
 	typedef std::vector<Material *> Materials;
 
 	Vertices vertices;
-	Faces faces;
 	Normals normals;
 	Materials materials;
 	BoundingBox localBounds;
@@ -37,6 +36,8 @@ public:
 		this->transform = transform;
 		vertNorms = false;
 	}
+
+	Faces faces;
 
 	bool vertNorms;
 
