@@ -28,7 +28,7 @@ struct Plane{
 
 class Node {
 public:
-    virtual bool findIntersection(ray& r, isect& i, double t_min, double t_max) = 0;
+    virtual bool findIntersection(ray& r, isect& i, double& t_min, double& t_max) = 0;
 };
 
 class SplitNode : public Node {
@@ -41,7 +41,7 @@ public:
 
     SplitNode(int a, int p, BoundingBox b, Node* l, Node* r) : axis(a), pos(p), bbox(b), left(l), right(r) {}
 
-    bool findIntersection(ray& r, isect& i, double t_min, double t_max) {
+    bool findIntersection(ray& r, isect& i, double& t_min, double& t_max) {
         // std::cout << "at split node" << std::endl;
 
         bbox.intersect(r, t_min, t_max);
@@ -63,6 +63,7 @@ public:
             if (left->findIntersection(r, i, t_min, t_max)) return true;
             if (right->findIntersection(r, i, t_min, t_max)) return true;
         }
+
         return false;
     }
     ~SplitNode() {
@@ -79,7 +80,7 @@ public:
     std::vector<Geometry*> objList;
     LeafNode(std::vector<Geometry*> _obj) : objList(_obj) {}
 
-    bool findIntersection(ray& r, isect& i, double t_min, double t_max){
+    bool findIntersection(ray& r, isect& i, double& t_min, double& t_max){
         // std::cout << "at leaf node" << std::endl;
 
         bool found = false;
@@ -102,6 +103,7 @@ public:
 
         // bool have_one = false;
         // for(const auto& obj : objList) {
+        //     t_min += 1;
 		// 	isect cur;
 		// 	if( obj->intersect(r, cur) ) {
 		// 		if(!have_one || (cur.getT() < i.getT())) {
@@ -124,10 +126,6 @@ public:
     Node* root = nullptr;
 
     KdTree() {}
-    // KdTree(std::vector<Geometry*> objList, BoundingBox bbox, int depthLimit, int leafSize) {
-    //     depth = 0;
-    //     root = buildTree(objList, bbox, depthLimit, leafSize);
-    // }
     ~KdTree() {
         delete root;
     }
@@ -136,17 +134,13 @@ public:
         root = buildTreeHelper(objList, bbox, depthLimit, leafSize, 0);
     }
 
-    bool intersect(ray& r, isect& i, double t_min, double t_max){
+    bool intersect(ray& r, isect& i, double& t_min, double& t_max){
         return root->findIntersection(r, i, t_min, t_max);
     }
 
 private:
     Node* buildTreeHelper(std::vector<Geometry*> objList, BoundingBox bbox, int depthLimit, int leafSize, int depth) {
-        // return new LeafNode(objList);  
-        // std::cout << "depth: " << depth << std::endl;
-
-        if (objList.size() <= leafSize || depth >= depthLimit) { 
-            // std::cout << "Base case" << std::endl;
+        if (objList.size() <= leafSize || ++depth == depthLimit) { 
             return new LeafNode(objList);
         }
 
@@ -159,14 +153,14 @@ private:
             double max = obj->getBoundingBox().getMax()[bestPlane.axis];
 
             if (min < bestPlane.position) {
-                    leftList.emplace_back(obj);
+                leftList.emplace_back(obj);
             }
             if (max > bestPlane.position) {
                 rightList.emplace_back(obj);
             } 
-            if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) < 0) {
+            if (bestPlane.position == max && bestPlane.position == min && glm::length(obj->getNormal()) < 0) {
                 leftList.emplace_back(obj);
-            } else if (bestPlane.position == max && bestPlane.position == min && length(obj->getNormal()) >= 0) {
+            } else if (bestPlane.position == max && bestPlane.position == min && glm::length(obj->getNormal()) >= 0) {
                 rightList.emplace_back(obj); 
             }
         }
@@ -177,8 +171,8 @@ private:
         }
         
         else return new SplitNode(bestPlane.axis, bestPlane.position, bbox,
-                buildTreeHelper(leftList, bestPlane.leftBBox, depthLimit, leafSize, depth + 1),
-                buildTreeHelper(rightList, bestPlane.rightBBox, depthLimit, leafSize, depth + 1)); 
+            buildTreeHelper(leftList, bestPlane.leftBBox, depthLimit, leafSize, depth),
+            buildTreeHelper(rightList, bestPlane.rightBBox, depthLimit, leafSize, depth)); 
     }
 
     Plane findBestPlane(std::vector<Geometry*> objList, BoundingBox bbox){
