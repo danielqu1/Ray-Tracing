@@ -9,6 +9,7 @@
 #include <glm/gtx/io.hpp>
 
 using namespace std;
+extern TraceUI* traceUI;
 
 bool Geometry::intersect(ray& r, isect& i) const {
 	double tmin, tmax;
@@ -92,10 +93,12 @@ void Geometry::ComputeBoundingBox() {
 Scene::Scene()
 {
 	ambientIntensity = glm::dvec3(0, 0, 0);
+	kdtree = new KdTree<Geometry>();
 }
 
 Scene::~Scene()
 {
+	delete kdtree;
 }
 
 void Scene::add(Geometry* obj) {
@@ -116,15 +119,22 @@ bool Scene::intersect(ray& r, isect& i) const {
 	double tmin = 0.0;
 	double tmax = 0.0;
 	bool have_one = false;
-	for(const auto& obj : objects) {
-		isect cur;
-		if( obj->intersect(r, cur) ) {
-			if(!have_one || (cur.getT() < i.getT())) {
-				i = cur;
-				have_one = true;
+
+	if (traceUI->kdSwitch()) {
+		have_one = kdtree->intersect(r, i, tmin, tmax);
+	} else {
+		for(const auto& obj : objects) {
+			isect cur;
+			if( obj->intersect(r, cur) ) {
+				if(!have_one || (cur.getT() < i.getT())) {
+					i = cur;
+					have_one = true;
+				}
 			}
 		}
 	}
+
+
 	if(!have_one)
 		i.setT(1000.0);
 	// if debugging,
@@ -144,4 +154,12 @@ TextureMap* Scene::getTexture(string name) {
 	return itr->second.get();
 }
 
+void Scene::buildTree(int maxDepth, int leafSize) {
+	std::vector<Geometry*> tempObjects;
+	for (auto const& o : objects) {
+		tempObjects.emplace_back(o.get());
+	}
+	
+	kdtree->buildTree(tempObjects, sceneBounds, maxDepth, leafSize);
+}
 

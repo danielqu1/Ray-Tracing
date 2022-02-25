@@ -263,6 +263,8 @@ void RayTracer::traceSetup(int w, int h)
 
 	// YOUR CODE HERE
 	// FIXME: Additional initializations
+
+	scene->buildTree(traceUI->getMaxDepth(), traceUI->getLeafSize());
 }
 
 void RayTracer::traceImageThread(int id, int w, int h) {
@@ -414,6 +416,8 @@ void RayTracer::waitRender()
         	th.join();
 		}
 	}
+
+	finishedThreads.clear();
 }
 
 

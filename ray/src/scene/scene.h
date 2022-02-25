@@ -264,6 +264,7 @@ public:
 
 	const BoundingBox& bounds() const { return sceneBounds; }
 
+	void buildTree(int maxDepth, int leafSize);
 
 private:
 	std::vector<std::unique_ptr<Geometry>> objects;
