@@ -78,6 +78,10 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 		return glm::dvec3(0.0, 0.0, 0.0);
 	}
 
+	if (thresh[0] < traceUI->getThreshold() && thresh[1] < traceUI->getThreshold() && thresh[2] < traceUI->getThreshold()) {
+		return glm::dvec3(0.0, 0.0, 0.0); 
+	}
+
 	isect i;
 	glm::dvec3 colorC;
 #if VERBOSE
@@ -111,7 +115,7 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 
 			// recurse on the ray
 			ray reflect = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFLECTION);
-			colorC += m.kr(i) * traceRay(reflect, thresh, depth - 1, t);
+			colorC += m.kr(i) * traceRay(reflect, m.kr(i) * thresh, depth - 1, t);
 		}
 
 		// Handle refraction
@@ -144,7 +148,7 @@ glm::dvec3 RayTracer::traceRay(ray& r, const glm::dvec3& thresh, int depth, doub
 
 				// recurse on the ray
 				ray refract = ray(position + RAY_EPSILON * direction, direction, glm::dvec3(1, 1, 1), ray::REFRACTION);
-				glm::dvec3 tempColor = traceRay(refract, thresh, depth - 1, t);
+				glm::dvec3 tempColor = traceRay(refract, m.kt(i) * thresh, depth - 1, t);
 
 				colorC += m.kt(i) * tempColor;
 			} else {
