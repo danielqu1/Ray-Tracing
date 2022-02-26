@@ -259,7 +259,7 @@ void RayTracer::traceSetup(int w, int h)
 	 * Sync with TraceUI
 	 */
 
-	threads = traceUI->getThreads() * 4;
+	threads = traceUI->getThreads();
 	block_size = traceUI->getBlockSize();
 	thresh = traceUI->getThreshold();
 	samples = traceUI->getSuperSamples();
@@ -268,7 +268,8 @@ void RayTracer::traceSetup(int w, int h)
 	// YOUR CODE HERE
 	// FIXME: Additional initializations
 
-	scene->buildTree(traceUI->getMaxDepth(), traceUI->getLeafSize());
+	if (traceUI->kdSwitch())
+		scene->buildTree(traceUI->getMaxDepth(), traceUI->getLeafSize());
 }
 
 void RayTracer::traceImageThread(int id, int w, int h) {

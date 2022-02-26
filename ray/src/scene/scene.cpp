@@ -121,6 +121,7 @@ bool Scene::intersect(ray& r, isect& i) const {
 	bool have_one = false;
 
 	if (traceUI->kdSwitch()) {
+		i.setT(1000.0);
 		have_one = kdtree->intersect(r, i, tmin, tmax);
 	} else {
 		for(const auto& obj : objects) {

@@ -12,6 +12,8 @@
 #include "bbox.h"
 #include <iostream>
 
+using namespace std;
+
 class SplitNode;
 class LeafNode;
 
@@ -42,11 +44,17 @@ public:
     SplitNode(int a, int p, BoundingBox b, Node* l, Node* r) : axis(a), pos(p), bbox(b), left(l), right(r) {}
 
     bool findIntersection(ray& r, isect& i, double& t_min, double& t_max) {
-        // std::cout << "at split node" << std::endl;
+        if (!bbox.intersect(r, t_min, t_max))
+            return false;
 
-        bbox.intersect(r, t_min, t_max);
-        double pos_min = r.at(t_min)[axis];
-        double pos_max = r.at(t_max)[axis];
+        left->findIntersection(r, i, t_min, t_max);
+        right->findIntersection(r, i, t_min, t_max);
+            return i.getT() != 1000.0;
+
+        double pos_tmin = r.at(t_min)[axis];
+        double pos_tmax = r.at(t_max)[axis];
+        double pos_min = min(pos_tmin, pos_tmax);
+        double pos_max = max(pos_tmin, pos_tmax);
 
         if (r.getDirection()[axis] < RAY_EPSILON && r.getDirection()[axis] > -RAY_EPSILON){
             pos_min+= 1e-6;
@@ -54,17 +62,18 @@ public:
         }
 
         if(pos > pos_min && pos > pos_max){
-            if(left->findIntersection(r, i, t_min, t_max))
-                return true;
+            left->findIntersection(r, i, t_min, t_max);
+            return i.getT() != 1000.0;
         } else if(pos < pos_min && pos < pos_max){
-            if(right->findIntersection(r, i, t_min, t_max))
-                 return true;
+            right->findIntersection(r, i, t_min, t_max);
+            return i.getT() != 1000.0;
         } else {
-            if (left->findIntersection(r, i, t_min, t_max)) return true;
-            if (right->findIntersection(r, i, t_min, t_max)) return true;
+            left->findIntersection(r, i, t_min, t_max);
+            right->findIntersection(r, i, t_min, t_max);
+            return i.getT() != 1000.0;
         }
 
-        return false;
+        return i.getT() != 1000.0;
     }
     ~SplitNode() {
         delete right;
@@ -81,39 +90,16 @@ public:
     LeafNode(std::vector<Geometry*> _obj) : objList(_obj) {}
 
     bool findIntersection(ray& r, isect& i, double& t_min, double& t_max){
-        // std::cout << "at leaf node" << std::endl;
-
-        bool found = false;
-        i.setT(1e13);
-
         for(const auto& obj : objList) {
+			isect cur;
+			if( obj->intersect(r, cur) ) {
+				if(i.getT() == 1000.0 || (cur.getT() < i.getT())) {
+					i = cur;
+				}
+			}
+		}
 
-            obj->getBoundingBox().intersect(r, t_min, t_max);
-            isect curr;
-
-            if(obj->intersect(r, curr) && curr.getT() < i.getT() && curr.getT() >= t_min && curr.getT() <= t_max){
-                i = curr;
-                found = true;
-            }
-        }
-        if (found) return true;
-        return false;   
-
-
-
-        // bool have_one = false;
-        // for(const auto& obj : objList) {
-        //     t_min += 1;
-		// 	isect cur;
-		// 	if( obj->intersect(r, cur) ) {
-		// 		if(!have_one || (cur.getT() < i.getT())) {
-		// 			i = cur;
-		// 			have_one = true;
-		// 		}
-		// 	}
-		// }
-
-        // return have_one;
+        return i.getT() != 1000.0;
     }
     
     ~LeafNode() {};
@@ -126,6 +112,7 @@ public:
     Node* root = nullptr;
 
     KdTree() {}
+
     ~KdTree() {
         delete root;
     }
@@ -158,15 +145,14 @@ private:
             if (max > bestPlane.position) {
                 rightList.emplace_back(obj);
             } 
-            if (bestPlane.position == max && bestPlane.position == min && glm::length(obj->getNormal()) < 0) {
+            if (bestPlane.position == max && bestPlane.position == min && obj->getNormal()[bestPlane.axis] < 0) {
                 leftList.emplace_back(obj);
-            } else if (bestPlane.position == max && bestPlane.position == min && glm::length(obj->getNormal()) >= 0) {
+            } else if (bestPlane.position == max && bestPlane.position == min && obj->getNormal()[bestPlane.axis] >= 0) {
                 rightList.emplace_back(obj); 
             }
         }
 
         if (rightList.empty() || leftList.empty()) {
-            // std::cout << "no plane" << std::endl;
             return new LeafNode(objList);
         }
         
@@ -209,9 +195,8 @@ private:
         for (std::vector<Plane>::iterator q = planeList.begin(); q!= planeList.end(); ++q) {
 
             plane = *q;
-            plane.leftCount = countP(objList, plane, true);
+            tie(plane.leftCount, plane.rightCount) = countP(objList, plane);
             plane.leftBBoxArea = plane.leftBBox.area();
-            plane.rightCount = countP(objList, plane, false);
             plane.rightBBoxArea = plane.rightBBox.area();
             double s = (plane.leftCount * plane.leftBBoxArea + plane.rightCount
                          * plane.rightBBoxArea)/bbox.area(); 
@@ -224,7 +209,9 @@ private:
         }       
         return bestPlane;
     }
-    int countP(std::vector<Geometry*> objList, Plane& plane, bool left){
+
+
+    std::pair<int, int> countP(std::vector<Geometry*> objList, Plane& plane){
 
         int countL = 0;
         int countR = 0;
@@ -236,11 +223,8 @@ private:
             if(max >  plane.position) countR++;
 
         }
-        if (left) {
-            return countL;
-        }
-        return countR;
         
+        return make_pair(countL, countR);
     }
 };
 
