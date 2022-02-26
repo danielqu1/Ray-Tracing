@@ -685,6 +685,7 @@ void Parser::parseTrimesh(Scene* scene, TransformNode* transform, const Material
           throw ParserException(error);
 
         // scene->add( tmesh );
+        // use faces instead of whole tmesh so kd trees does stuff
         for (TrimeshFace* face : tmesh->faces) {
           scene->add(face);
         }

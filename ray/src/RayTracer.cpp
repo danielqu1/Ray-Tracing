@@ -268,6 +268,7 @@ void RayTracer::traceSetup(int w, int h)
 	// YOUR CODE HERE
 	// FIXME: Additional initializations
 
+	// build kd tree
 	if (traceUI->kdSwitch())
 		scene->buildTree(traceUI->getMaxDepth(), traceUI->getLeafSize());
 }
@@ -322,6 +323,7 @@ void RayTracer::aaImageThread(int id, int w, int h) {
 		
 		glm::dvec3 color = getPixel(i, j);
 
+		// check if pixel is on a boundary
 		bool onBoundary = false;
 		for (int a = -1; a < 2; ++a) {
 			if (i + a < 0 || i + a >= buffer_width) {
@@ -347,12 +349,15 @@ void RayTracer::aaImageThread(int id, int w, int h) {
 				break;
 		}
 
+		// if pixel is on boundary, super sample
 		if (onBoundary) {
 			int totalSamples = glm::pow(samples, 2);
 			glm::dvec3 newColor = glm::dvec3(0, 0, 0);
 
 			double x = (double(i) - .5) / double(buffer_width);
 			double y = (double(j) - .5) / double(buffer_height);
+
+			// loop through the grid
 			for (int a = 0; a < samples; ++a) {
 				double x_sample = x + (double(a) * x_offset);
 
@@ -362,6 +367,7 @@ void RayTracer::aaImageThread(int id, int w, int h) {
 				}
 			}
 
+			// update the color
 			setPixel(i, j, newColor);
 		}
 	}
@@ -378,6 +384,7 @@ int RayTracer::aaImage()
 	//      RayTracer::traceSetup() function
 	// return 0;
 
+	// start aa threads
 	if (samples > 0) {
 		for (int t = 0; t < threads; ++t) {
 			std::thread imageThread(&RayTracer::aaImageThread, this, t, buffer_width, buffer_height);
@@ -416,6 +423,7 @@ void RayTracer::waitRender()
 	//
 	// TIPS: Join all worker threads here.
 
+	// join all threads
 	for (std::thread & th : allThreads) {
 		if (th.joinable()) {
         	th.join();

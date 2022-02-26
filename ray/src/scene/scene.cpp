@@ -120,6 +120,7 @@ bool Scene::intersect(ray& r, isect& i) const {
 	double tmax = 0.0;
 	bool have_one = false;
 
+	// check if using kd trees
 	if (traceUI->kdSwitch()) {
 		i.setT(1000.0);
 		have_one = kdtree->intersect(r, i, tmin, tmax);
@@ -155,7 +156,9 @@ TextureMap* Scene::getTexture(string name) {
 	return itr->second.get();
 }
 
+// builds the kd tree
 void Scene::buildTree(int maxDepth, int leafSize) {
+	// switch to normal ptrs
 	std::vector<Geometry*> tempObjects;
 	for (auto const& o : objects) {
 		tempObjects.emplace_back(o.get());

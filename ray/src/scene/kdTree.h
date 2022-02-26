@@ -17,6 +17,7 @@ using namespace std;
 class SplitNode;
 class LeafNode;
 
+// plane struct
 struct Plane{
     int axis; //0 = x, 1 = y, 2 = z
     double position;
@@ -28,11 +29,13 @@ struct Plane{
     BoundingBox rightBBox; 
 };
 
+// parent node class
 class Node {
 public:
     virtual bool findIntersection(ray& r, isect& i, double& t_min, double& t_max) = 0;
 };
 
+// split point in the kdtree
 class SplitNode : public Node {
 public:
     int axis;
@@ -43,31 +46,36 @@ public:
 
     SplitNode(int a, int p, BoundingBox b, Node* l, Node* r) : axis(a), pos(p), bbox(b), left(l), right(r) {}
 
+    // check if ray intersects this node's bbox, return intersect if true
     bool findIntersection(ray& r, isect& i, double& t_min, double& t_max) {
         if (!bbox.intersect(r, t_min, t_max))
             return false;
-
         left->findIntersection(r, i, t_min, t_max);
         right->findIntersection(r, i, t_min, t_max);
             return i.getT() != 1000.0;
 
+        // find max and min on axis
         double pos_tmin = r.at(t_min)[axis];
         double pos_tmax = r.at(t_max)[axis];
         double pos_min = min(pos_tmin, pos_tmax);
         double pos_max = max(pos_tmin, pos_tmax);
 
+        // handle near parellel
         if (r.getDirection()[axis] < RAY_EPSILON && r.getDirection()[axis] > -RAY_EPSILON){
             pos_min+= 1e-6;
             pos_max+= 1e-6;
         }
 
         if(pos > pos_min && pos > pos_max){
+            // check if hits only left
             left->findIntersection(r, i, t_min, t_max);
             return i.getT() != 1000.0;
         } else if(pos < pos_min && pos < pos_max){
+            // check if hits only right
             right->findIntersection(r, i, t_min, t_max);
             return i.getT() != 1000.0;
         } else {
+            // hits both
             left->findIntersection(r, i, t_min, t_max);
             right->findIntersection(r, i, t_min, t_max);
             return i.getT() != 1000.0;
@@ -75,6 +83,7 @@ public:
 
         return i.getT() != 1000.0;
     }
+
     ~SplitNode() {
         delete right;
         delete left;
@@ -82,6 +91,7 @@ public:
 
 };
 
+// Leaf node of kdtree
 class LeafNode : public Node
 {
 public:
@@ -89,7 +99,9 @@ public:
     std::vector<Geometry*> objList;
     LeafNode(std::vector<Geometry*> _obj) : objList(_obj) {}
 
+    // checks for intersection for all objects at this node
     bool findIntersection(ray& r, isect& i, double& t_min, double& t_max){
+        // loop through all objects
         for(const auto& obj : objList) {
 			isect cur;
 			if( obj->intersect(r, cur) ) {
@@ -126,7 +138,10 @@ public:
     }
 
 private:
+
+    // recursively builds the tree
     Node* buildTreeHelper(std::vector<Geometry*> objList, BoundingBox bbox, int depthLimit, int leafSize, int depth) {
+        // base case
         if (objList.size() <= leafSize || ++depth == depthLimit) { 
             return new LeafNode(objList);
         }
@@ -135,6 +150,7 @@ private:
         std::vector<Geometry*> rightList;
         Plane bestPlane = findBestPlane(objList, bbox);
 
+        // loop through objects and place on a side
         for(const auto& obj : objList) {
             double min = obj->getBoundingBox().getMin()[bestPlane.axis];
             double max = obj->getBoundingBox().getMax()[bestPlane.axis];
@@ -152,20 +168,23 @@ private:
             }
         }
 
+        // see if split is useless
         if (rightList.empty() || leftList.empty()) {
             return new LeafNode(objList);
         }
-        
+        // o/w return a new split node
         else return new SplitNode(bestPlane.axis, bestPlane.position, bbox,
             buildTreeHelper(leftList, bestPlane.leftBBox, depthLimit, leafSize, depth),
             buildTreeHelper(rightList, bestPlane.rightBBox, depthLimit, leafSize, depth)); 
     }
 
+    // searches for the best plane in objList
     Plane findBestPlane(std::vector<Geometry*> objList, BoundingBox bbox){
         std::vector<Plane> planeList;
         Plane bestPlane;
         Plane plane;
 
+        // make all planes
         for (int axis = 0 ; axis < 3; axis++) {
             for(const auto& obj : objList) {
                 Plane p1;
@@ -191,6 +210,7 @@ private:
             }
         }    
     
+        // pick the best plane
         double minS = 1e100;      
         for (std::vector<Plane>::iterator q = planeList.begin(); q!= planeList.end(); ++q) {
 
@@ -210,9 +230,8 @@ private:
         return bestPlane;
     }
 
-
+    // counts the number of objects on the left and right side of the plane
     std::pair<int, int> countP(std::vector<Geometry*> objList, Plane& plane){
-
         int countL = 0;
         int countR = 0;
         for(const auto& obj : objList) {
@@ -221,7 +240,6 @@ private:
     
             if(min <  plane.position) countL++;
             if(max >  plane.position) countR++;
-
         }
         
         return make_pair(countL, countR);
